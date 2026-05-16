@@ -66,9 +66,5 @@ pipeline {
             }
         }   
     }
-    post {
-        always {
-            archiveArtifacts artifacts: 'gitleaks-report.json', fingerprint: true, allowEmptyArchive: false
-        }
-    }
+ 
 }
