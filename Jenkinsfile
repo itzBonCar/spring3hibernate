@@ -1,70 +1,51 @@
 pipeline {
-    agent { label 'test-agent' }
+    agent any
+
     tools {
         jdk 'java11'
         maven 'maven'
     }
 
-    parameters {
-        // string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-
-        // text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
-
-        // booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
-
-        choice(name: 'ENVIRONMENT', choices: ['dev', 'uat', 'prod'], description: 'Pick something')
-    }
-
     stages {
-        stage('checkout') {
+
+        stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/OT-MyGurukulam/spring3hibernate.git']])
+                checkout scm
             }
         }
-        
-        stage('GitLeaks Scan') {
+
+        stage('Build') {
             steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Branch Info') {
+            steps {
+                echo "Running on branch: ${env.BRANCH_NAME}"
+            }
+        }
+
+        stage('Feature Branch Special Stage') {
+
+            when {
+                branch 'feature-demo'
+            }
+
+            steps {
+                echo 'THIS STAGE RUNS ONLY ON FEATURE BRANCH'
+
                 sh '''
-                    gitleaks detect \
-                    --source . \
-                    --report-format json \
-                    --report-path gitleaks-report.json \
-                    || true
+                    echo "Running feature branch logic..."
+                    ls -lrt
                 '''
             }
         }
-        
-        stage('Parallel Stage') {
-            parallel {
-                stage('compile') {
-                    // input {
-                    //     message "Should we continue?"
-                    //     ok "Yes, we should."
-                    //     submitter "alice,bob"
-                    //     parameters {
-                    //         string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-                    //     }
-                    // }
-                    steps {
-                        sh 'mvn compile'
-                    }
-                    
-                }
-                // stage('test') {
-                //     steps {
-                //         sh 'mvn test'
-                //     }
-                // }
-                stage('package') {
-                    when {
-                        expression { params.ENVIRONMENT == 'prod' }
-                    }
-                    steps {
-                        sh 'mvn package -DskipTests'
-                    }
-                }
-            }
-        }   
     }
- 
+
+    post {
+        success {
+            echo 'Build Successful'
+        }
+    }
 }
